@@ -1,15 +1,4 @@
-import {
-    Component,
-    createMemo,
-    createRoot,
-    createSignal,
-    For,
-    getOwner,
-    JSX,
-    runWithOwner,
-    Show,
-    untrack,
-} from 'solid-js';
+import {Component, createMemo, createSignal, For, getOwner, JSX, runWithOwner, Show} from 'solid-js';
 import {ApiDescription, TypeDescription} from '../lib/api-description';
 import {Icon} from './Icon';
 import {
@@ -17,12 +6,11 @@ import {
     mdiDeleteCircleOutline,
     mdiLanguageTypescript,
     mdiMinusBoxOutline,
-    mdiPlus,
-    mdiPlusBoxOutline, mdiPlusCircleOutline,
+    mdiPlusBoxOutline,
+    mdiPlusCircleOutline,
     mdiShape,
 } from '@mdi/js';
 import {TypeLink} from './TypeLink';
-import {Editable} from '../lib/editable-req';
 import {ReqInput} from './ReqInput';
 import {EditableRequestInput} from '../lib/editable-request-input';
 
@@ -207,9 +195,9 @@ export const TypeDoc2: Component<{
                             'cursor-pointer': !!props.editableInput,
                         }}
                         onClick={() => {
-                            runWithOwner(owner, () => {
-                                props.editableInput!.setIsSet(!props.editableInput!.get().isSet);
-                            });
+                            // runWithOwner(owner, () => {
+                            //     props.editableInput!.setIsSet(!props.editableInput!.get().isSet);
+                            // });
                         }}
                     >
                         Optional

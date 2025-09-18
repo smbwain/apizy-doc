@@ -1,14 +1,4 @@
-import {Component, getOwner, ParentComponent, Show} from 'solid-js';
-import {Editable, EditableBoolean, EditableString} from '../lib/editable-req';
-import {Icon} from './Icon';
-import {
-    mdiCheckboxBlankOutline,
-    mdiCheckboxOutline,
-    mdiNull,
-    mdiPencil,
-    mdiPencilOff,
-    mdiPencilPlusOutline, mdiTrashCanOutline,
-} from '@mdi/js';
+import {Component, ParentComponent, Show} from 'solid-js';
 import {
     EditableRequestInput,
     EditableRequestInputBoolean,

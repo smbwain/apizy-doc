@@ -33,7 +33,7 @@ const App: Component = () => {
                     throw new Error('Invalid response');
                 }
                 const json = await res.json();
-                console.log({json});
+                // console.log({json});
                 setDesc(json);
             } catch (err) {
                 console.error(err);
@@ -54,9 +54,9 @@ const App: Component = () => {
     const typeName = () => params.kind === 'type' ? params.id : undefined;
     const type = () => typeName() ? desc()!.types[typeName()!] : null;
 
-    createEffect(() => {
-        console.log(params.kind, params.id, 'm', methodName(), 't', typeName());
-    });
+    // createEffect(() => {
+    //     console.log(params.kind, params.id, 'm', methodName(), 't', typeName());
+    // });
 
     return (
         <Show when={desc()} fallback={
@@ -77,8 +77,10 @@ const App: Component = () => {
                 />
                 <div class="flex flex-col overflow-hidden">
                     <Show when={type()}>
+                        <div class='p-4'>
                         <h2 class='text-2xl mb-5 flex gap-1 items-center'><Icon icon={mdiShape}/>{typeName()}</h2>
                         <TypeDoc2 api={desc()!} desc={type()!} expandedByDefault={true} name={typeName()}/>
+                        </div>
                     </Show>
                     <Show when={method()}>
                         <MethodDoc
