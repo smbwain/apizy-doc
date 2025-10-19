@@ -3,18 +3,21 @@ import {ApiDescription, MethodDescription} from '../lib/api-description';
 import {TypeDoc2} from './TypeDoc2';
 import {Icon} from './Icon';
 import {mdiClose, mdiFunction} from '@mdi/js';
-import {createEditableRequestInputFromDescription, editableRequestInputToJSON} from '../lib/editable-request-input';
+import {createEditableValueContainer} from '../lib/editable-request-input';
 
 export const MethodDoc: Component<{
     api: ApiDescription;
     name: string;
     desc: MethodDescription;
 }> = (props) => {
-    // const [editableTab, setEditableTab] = createSignal<'sdk' | 'curl' | null>(null);
+    const [playgroundTab, setPlaygroundTab] = createSignal<'sdk' | 'curl' | null>(null);
     // console.log('owner 1', getOwner());
-    // const editable = createMemo(() => {
-    //     return createEditableRequestInputFromDescription(props.desc.input!, props.api);
-    // });
+    const evc = createMemo(() => props.desc.input ? createEditableValueContainer(props.desc.input, props.api) : undefined);
+    /*createMemo(() => {
+        return createEditableValueContainer();
+        // return createEditableRequestInputFromDescription(props.desc.input!, props.api);
+        return {hello: 5};
+    });*/
     return (
         <>
             <div class='flex flex-col gap-4 overflow-y-auto grow p-4'>
@@ -24,7 +27,13 @@ export const MethodDoc: Component<{
                 </code>
                 <h3 class='font-bold'>Input</h3>
                 <Show when={props.desc.input} fallback={'null'}>
-                    <TypeDoc2 api={props.api} desc={props.desc.input!} name='Input' expandedByDefault={true} /*editableInput={editableTab() ? editable() : undefined}*//>
+                    <TypeDoc2
+                        api={props.api}
+                        desc={props.desc.input!}
+                        name='Input'
+                        expandedByDefault={true}
+                        evc={playgroundTab() ? evc() : undefined}
+                    />
                 </Show>
                 <h3 class='font-bold'>Output</h3>
                 <TypeDoc2 api={props.api} desc={props.desc.output!} name='Output' expandedByDefault={true}/>
@@ -34,46 +43,64 @@ export const MethodDoc: Component<{
                 {/*</Insert>*/}
                 {/*<span class='text-amber-400'>{'\n'}): Promise&lt;<TypeDoc api={props.api} desc={props.desc.output}/>&gt;</span>*/}
             </div>
-            {/*<div class='bg-cyan-900 p-2 overflow-hidden flex flex-col h-2/5'>*/}
-            {/*    <div class='flex items-center gap-2'>*/}
-            {/*        <span class='font-bold'>Playground</span>*/}
-            {/*        <span onClick={() => {*/}
-            {/*            setEditableTab('sdk');*/}
-            {/*        }}>SDK</span>*/}
-            {/*        <span onClick={() => {*/}
-            {/*            setEditableTab('curl');*/}
-            {/*        }}>curl</span>*/}
-            {/*        <div class='flex-grow'/>*/}
-            {/*        <Show when={editableTab()}>*/}
-            {/*            <button onClick={() => {*/}
-            {/*                setEditableTab(null);*/}
-            {/*            }}>*/}
-            {/*                <Icon icon={mdiClose}/>*/}
-            {/*            </button>*/}
-            {/*        </Show>*/}
-            {/*    </div>*/}
-            {/*    <Show when={editableTab() === 'sdk'}>*/}
-            {/*        <div class='p-2 overflow-hidden flex flex-col'>*/}
-            {/*            <pre class='bg-gray-200 text-gray-800 p-2 rounded-md overflow-auto'>*/}
-            {/*                await sdk.{props.name}(*/}
-            {/*                { JSON.stringify(editableRequestInputToJSON(editable()), null, 4) }*/}
-            {/*                , {'{});'})*/}
-            {/*            </pre>*/}
-            {/*        </div>*/}
-            {/*    </Show>*/}
-            {/*</div>*/}
+            <div class='bg-cyan-900 p-2 overflow-hidden flex flex-col shrink-0' classList={{
+                'h-2/5': !!playgroundTab()
+            }}>
+                <div class='flex items-center gap-2'>
+                    <span class='text-gray-400'>Playground</span>
+                    <span
+                        class='cursor-pointer font-bold hover:text-pink-300 rounded px-1'
+                        onClick={() => {
+                            setPlaygroundTab('sdk');
+                        }}
+                        classList={{
+                            'bg-white text-pink-400': playgroundTab() === 'sdk',
+                        }}
+                    >
+                        SDK
+                    </span>
+                    <span
+                        class='cursor-pointer font-bold hover:text-pink-300 rounded px-1'
+                        onClick={() => {
+                            setPlaygroundTab('curl');
+                        }}
+                        classList={{
+                            'bg-white text-pink-400': playgroundTab() === 'curl',
+                        }}
+                    >
+                        curl
+                    </span>
+                    <div class='flex-grow'/>
+                    <Show when={playgroundTab()}>
+                        <button
+                            class='cursor-pointer hover:fill-pink-300'
+                            onClick={() => {
+                                setPlaygroundTab(null);
+                            }}
+                        >
+                            <Icon icon={mdiClose}/>
+                        </button>
+                    </Show>
+                </div>
+                <Show when={playgroundTab() === 'sdk'}>
+                    <div class='p-2 overflow-hidden flex flex-col'>
+                        <pre class='bg-gray-200 text-gray-800 p-2 rounded-md overflow-auto'>
+                            <strong>await</strong> {props.api.jsSdkPath ?? 'sdk'}.{props.name}(
+                            { JSON.stringify(evc()?.data(), null, 4) }
+                            , {'{}'});
+                        </pre>
+                    </div>
+                </Show>
+                <Show when={playgroundTab() === 'curl'}>
+                    <div class='p-2 overflow-hidden flex flex-col'>
+                        <pre class='bg-gray-200 text-gray-800 p-2 rounded-md overflow-auto'>
+                            curl -X POST -H 'Content-Type: application/json' -d @- {props.api.apiUrl ?? 'https://example.com/api'}/{props.name} {'<<\'JSON\''}<br/>
+                            {JSON.stringify({input: evc()?.data()}, null, 4)}<br/>
+                            JSON<br/>
+                        </pre>
+                    </div>
+                </Show>
+            </div>
         </>
     );
-    // ;return (<>*/}
-    {/*    sdk.<span class='text-amber-400'>{props.name}(</span>*/}
-    {/*    {'\n    input: '}*/}
-    {/*    <Show when={props.desc.input} fallback={'null'}>*/}
-    {/*        <TypeDoc api={props.api} desc={props.desc.input!}/>*/}
-    {/*    </Show>*/}
-    {/*    {'\n    options: '}*/}
-    {/*    <Insert isObject={true}>*/}
-    {/*        {'   extend: ExtendQuery;\n   fetchOptions: FetchOptions;\n'}*/}
-    {/*    </Insert>*/}
-    {/*    <span class='text-amber-400'>{'\n'}): Promise&lt;<TypeDoc api={props.api} desc={props.desc.output}/>&gt;</span>*/}
-    {/*</>);*/}
 };

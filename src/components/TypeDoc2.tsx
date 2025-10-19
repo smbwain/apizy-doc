@@ -1,9 +1,8 @@
-import {Component, createMemo, createSignal, For, getOwner, JSX, runWithOwner, Show} from 'solid-js';
+import {Component, createMemo, createSignal, For, getOwner, JSX, Show} from 'solid-js';
 import {ApiDescription, TypeDescription} from '../lib/api-description';
 import {Icon} from './Icon';
 import {
-    mdiCheckBold,
-    mdiDeleteCircleOutline,
+    mdiCheckBold, mdiDeleteCircleOutline,
     mdiLanguageTypescript,
     mdiMinusBoxOutline,
     mdiPlusBoxOutline,
@@ -11,8 +10,8 @@ import {
     mdiShape,
 } from '@mdi/js';
 import {TypeLink} from './TypeLink';
+import {EditableValueContainer} from '../lib/editable-request-input';
 import {ReqInput} from './ReqInput';
-import {EditableRequestInput} from '../lib/editable-request-input';
 
 export const ShortView: Component<{
     api: ApiDescription;
@@ -47,7 +46,7 @@ export const FullView: Component<{
     api: ApiDescription;
     desc: TypeDescription;
     line?: boolean;
-    editableInput?: EditableRequestInput;
+    evc?: EditableValueContainer;
 }> = props => {
     const nullable = props.desc.nullable ? <div class='text-amber-700 font-bold'> | null</div> : null;
     return (
@@ -63,44 +62,53 @@ export const FullView: Component<{
                         <TypeLink name={props.desc.type.alias}/>
                         {nullable}
                     </div>
-                    <FullView api={props.api} desc={props.api.types[props.desc.type.alias]} editableInput={props.editableInput}/>
+                    <FullView api={props.api} desc={props.api.types[props.desc.type.alias]} evc={props.evc?.editable()?.aliasFor}/>
                 </>
             ) : (props.desc.type.arrayOf) ? (
                 <>
                     <div class='flex gap-1'>
                         <div class='text-amber-700 font-bold'>Array&lt; ... &gt;</div>
                         {nullable}
-                        <Show when={props.editableInput?.type === 'array' ? props.editableInput : null}>{ei => (
+                        <Show when={props.evc?.editable()?.type === 'array'}>
                             <>
-                                [{ei().get().value.length}]
-                                <button onClick={() => {
-                                    ei().insert();
-                                }}>
-                                    <Icon icon={mdiPlusCircleOutline}/>
-                                </button>
+                                <span class='text-gray-500'>[Size: {props.evc?.editable()?.arrayElements?.().length}]</span>
                             </>
-                        )}</Show>
+                        </Show>
                     </div>
                     <Show
-                        when={(props.editableInput?.type === 'array' && props.editableInput.get().value.length) ? props.editableInput : null}
+                        when={props.evc}
                         fallback={<FullView api={props.api} desc={props.desc.type.arrayOf}/>}
-                    >{ei => (
-                        <For each={ei().get().value}>{(e, index) => (
+                    >
+                        <For each={props.evc?.editable()?.arrayElements?.()}>{(e, index) => (
                             <TypeDoc2
                                 api={props.api}
                                 desc={props.desc.type.arrayOf!}
                                 name={index().toString()}
                                 icons={
-                                    <button onClick={() => {
-                                        ei().remove(index());
-                                    }}>
+                                    <button
+                                        class='cursor-pointer hover:fill-pink-300'
+                                        onClick={() => {
+                                            props.evc?.editable()?.arrayRemove?.(index());
+                                        }}
+                                    >
                                         <Icon icon={mdiDeleteCircleOutline}/>
                                     </button>
                                 }
-                                editableInput={e}
+                                evc={e}
                             />
                         )}</For>
-                    )}</Show>
+                        <div class='text-gray-500 flex gap-1 items-center'>
+                            ...
+                            <button
+                                class='cursor-pointer hover:fill-pink-300'
+                                onClick={() => {
+                                    props.evc?.editable()?.arrayInsert?.();
+                                }}
+                            >
+                                <Icon icon={mdiPlusCircleOutline}/>
+                            </button>
+                        </div>
+                    </Show>
                 </>
             ) : (props.desc.type.ts) ? (
                 <div class='flex gap-1'>
@@ -118,7 +126,7 @@ export const FullView: Component<{
                             api={props.api}
                             desc={props.desc.type.objectOf![key]}
                             name={key}
-                            editableInput={props.editableInput?.get().value?.[key]}
+                            evc={props.evc?.editable()?.objectChildren?.[key]}
                         />
                     )}</For>
                 </>
@@ -133,7 +141,7 @@ export const TypeDoc2: Component<{
     expandedByDefault?: boolean;
     name?: string;
     icons?: JSX.Element;
-    editableInput?: EditableRequestInput;
+    evc?: EditableValueContainer;
 }> = (props) => {
     const [expanded, setExpanded] = createSignal(props.expandedByDefault ?? false);
     const expandable = createMemo(() => {
@@ -146,7 +154,7 @@ export const TypeDoc2: Component<{
                 break;
             }
             if (currentDesc.type.arrayOf) {
-                if (props.editableInput) {
+                if (props.evc) {
                     return true;
                 }
                 currentDesc = currentDesc.type.arrayOf;
@@ -157,7 +165,7 @@ export const TypeDoc2: Component<{
 
         return expandable;
     });
-    const owner = getOwner();
+    // const owner = getOwner();
     return (
         <div>
             <div
@@ -182,7 +190,7 @@ export const TypeDoc2: Component<{
                     {props.name ? (
                         <>
                             <div class='flex items-center font-bold text-emerald-500' classList={{
-                                'text-emerald-800': (props.desc.inputOptional && !props.editableInput?.get().isSet) || props.desc.outputExtendable,
+                                'text-emerald-800': (props.desc.inputOptional && !props.evc?.isSet()) || props.desc.outputExtendable,
                             }}>{props.name}:</div>
                         </>
                     ) : null}
@@ -192,36 +200,36 @@ export const TypeDoc2: Component<{
                     <div
                         class='bg-cyan-900 rounded-xs px-1 text-gray-300 uppercase text-xs font-bold flex items-center gap-1 group'
                         classList={{
-                            'cursor-pointer': !!props.editableInput,
+                            'cursor-pointer': !!props.evc,
                         }}
                         onClick={() => {
                             // runWithOwner(owner, () => {
-                            //     props.editableInput!.setIsSet(!props.editableInput!.get().isSet);
+                                props.evc?.setIsSet?.(!props.evc?.isSet());
                             // });
                         }}
                     >
                         Optional
-                        <Show when={props.editableInput}>
+                        <Show when={props.evc}>
                             <div class='bg-gray-400 w-3 h-3 rounded-xs fill-black flex items-center justify-center group-hover:bg-white'>
-                                <Show when={props.editableInput!.get().isSet}>
+                                <Show when={props.evc?.isSet()}>
                                     <Icon icon={mdiCheckBold} size='10'/>
                                 </Show>
                             </div>
                         </Show>
                     </div>
                 </Show>
-                <Show when={props.editableInput && props.desc.nullable && (!props.desc.inputOptional || props.editableInput.get().isSet)}>
+                <Show when={props.evc && props.desc.nullable && props.evc.isSet()}>
                     <div
                         class='bg-amber-900 cursor-pointer rounded-xs px-1 text-gray-200 uppercase text-xs font-bold flex items-center gap-1 group'
                         onClick={() => {
-                            runWithOwner(owner, () => {
-                                props.editableInput!.setIsNull(!props.editableInput!.get().isNull);
-                            });
+                            // runWithOwner(owner, () => {
+                                props.evc?.setIsNull?.(!props.evc?.isNull());
+                            // });
                         }}
                     >
                         null
                         <div class='bg-gray-400 w-3 h-3 rounded-xs fill-black flex items-center justify-center group-hover:bg-white'>
-                            <Show when={props.editableInput!.get().isNull}>
+                            <Show when={props.evc?.isNull()}>
                                 <Icon icon={mdiCheckBold} size='10'/>
                             </Show>
                         </div>
@@ -236,12 +244,12 @@ export const TypeDoc2: Component<{
                     </div>
                 </Show>
                 <div class='w-5'/>
-                <Show when={props.editableInput?.get().isSet && !props.editableInput?.get().isNull}>
-                    <ReqInput editableInput={props.editableInput!}/>
+                <Show when={props.evc?.isSet() && !props.evc?.isNull() && props.evc?.editable()}>
+                    <ReqInput editable={props.evc?.editable()!}/>
                 </Show>
             </div>
             <Show when={expanded()}>
-                <FullView api={props.api} desc={props.desc} line editableInput={props.editableInput}/>
+                <FullView api={props.api} desc={props.desc} line evc={(props.evc?.isSet() && !props.evc?.isNull()) ? props.evc : undefined}/>
             </Show>
         </div>
     );

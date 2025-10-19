@@ -1,117 +1,70 @@
-import {Component, ParentComponent, Show} from 'solid-js';
-import {
-    EditableRequestInput,
-    EditableRequestInputBoolean,
-    EditableRequestInputString,
-} from '../lib/editable-request-input';
-
-const ChButton: ParentComponent<{
-    active?: boolean;
-    onClick: () => void;
-}> = props => {
-    return (
-        <button
-            classList={{
-                'text-gray-200 fill-gray-200': !props.active,
-                'bg-gray-200 text-cyan-800 fill-cyan-800': props.active
-            }}
-            onClick={props.onClick}
-        >
-            {props.children}
-        </button>
-    );
-};
+import {Component, For, ParentComponent, Show} from 'solid-js';
+import {EditableValue} from '../lib/editable-request-input';
+import {Icon} from './Icon';
+import {mdiPencilCircleOutline} from '@mdi/js';
 
 export const InputString: Component<{
-    editable: EditableRequestInputString;
+    editable: EditableValue;
 }> = props => {
     return (
         <input
-            class='grow bg-white text-gray-700 outline-0 rounded px-1'
-            value={props.editable.get().value}
+            class='grow text-gray-700 outline-0 rounded px-1'
+            classList={{
+                'bg-red-300': !(props.editable.isValid?.() ?? true),
+                'bg-white': props.editable.isValid?.() ?? true,
+            }}
+            value={props.editable.strValue?.()}
             onInput={e => {
-                props.editable.set(e.currentTarget.value);
+                props.editable.setStrValue?.(e.currentTarget.value);
             }}
         />
     );
 };
 
 export const InputBoolean: Component<{
-    editable: EditableRequestInputBoolean;
+    editable: EditableValue;
 }> = props => {
     return (
-        <div>
-            <select class='bg-white text-gray-700 outline-0 rounded px-1' onChange={e => {
-                props.editable.set(e.currentTarget.value === 'true');
-            }}>
-                <option value='true' selected={props.editable.get().value}>true</option>
-                <option value='false' selected={!props.editable.get().value}>false</option>
-            </select>
-            {/*<input type='checkbox' checked={props.editable.get().value} onClick={() => {*/}
-            {/*    props.editable.set(!props.editable.get().value);*/}
-            {/*}}/>*/}
-        </div>
+        <select class='grow bg-white text-gray-700 outline-0 rounded px-1' onChange={e => {
+            props.editable.setBoolValue?.(e.currentTarget.value === 'true');
+        }}>
+            <option value='true' selected={props.editable.boolValue?.()}>true</option>
+            <option value='false' selected={!props.editable.boolValue?.()}>false</option>
+        </select>
+    );
+};
+
+export const InputEnum: Component<{
+    editable: EditableValue;
+}> = props => {
+    return (
+        <select class='grow bg-white text-gray-700 outline-0 rounded px-1' onChange={e => {
+            props.editable.setStrValue?.(e.currentTarget.value);
+        }}>
+            <For each={props.editable.enumValues?.()}>{val => (
+                <option value={val.name} selected={val.name === props.editable.strValue?.()}>{val.name}</option>
+            )}</For>
+        </select>
     );
 };
 
 export const ReqInput: Component<{
-    editableInput: EditableRequestInput;
+    editable: EditableValue;
 }> = props => {
     return (
         <div class='grow rounded px-1 flex items-center gap-1'>
-            <Show when={props.editableInput.type === 'string' ? props.editableInput : null}>{e => (
-                <InputString editable={e()}/>
-            )}</Show>
-            <Show when={props.editableInput.type === 'boolean' ? props.editableInput : null}>{e => (
-                <InputBoolean editable={e()}/>
-            )}</Show>
-            {/*<Show when={props.editableInput.get() === undefined}>*/}
-            {/*    <ChButton*/}
-            {/*        active={props.editableInput.get() !== undefined}*/}
-            {/*        onClick={() => {*/}
-            {/*            props.editableInput.setup();*/}
-            {/*        }}*/}
-            {/*    >*/}
-            {/*        <Icon icon={mdiPencil}/>*/}
-            {/*    </ChButton>*/}
-            {/*</Show>*/}
-            {/*<Show when={props.editableInput.get() !== undefined}>*/}
-            {/*    <Show when={props.editableInput.nullable}>*/}
-            {/*        <ChButton*/}
-            {/*            active={props.editableInput.get() === null}*/}
-            {/*            onClick={() => {*/}
-            {/*                if (props.editableInput.get() === null) {*/}
-            {/*                    props.editableInput.setup();*/}
-            {/*                } else {*/}
-            {/*                    props.editableInput.setNull();*/}
-            {/*                }*/}
-            {/*            }}*/}
-            {/*        >*/}
-            {/*            <Icon icon={mdiNull}/>*/}
-            {/*        </ChButton>*/}
-            {/*    </Show>*/}
-            {/*    <Show when={props.editableInput.get() !== null} fallback={'null'}>*/}
-            {/*        { props.editableInput.type === 'object' ? (*/}
-            {/*            null*/}
-            {/*        ) : (*/}
-            {/*            props.editableInput.type === 'string' ? (*/}
-            {/*                <InputString editable={props.editableInput}/>*/}
-            {/*            ) : props.editableInput.type === 'boolean' ? (*/}
-            {/*                <InputBoolean editable={props.editableInput}/>*/}
-            {/*            ) : null*/}
-            {/*        ) }*/}
-            {/*    </Show>*/}
-            {/*    <Show when={props.editableInput.optional}>*/}
-            {/*        <ChButton*/}
-            {/*            active={props.editableInput.get() !== undefined}*/}
-            {/*            onClick={() => {*/}
-            {/*                props.editableInput.unset();*/}
-            {/*            }}*/}
-            {/*        >*/}
-            {/*            <Icon icon={mdiTrashCanOutline}/>*/}
-            {/*        </ChButton>*/}
-            {/*    </Show>*/}
-            {/*</Show>*/}
+            <Show when={props.editable.type === 'string' || props.editable.type === 'number' || props.editable.type === 'json'}>
+                <Icon icon={mdiPencilCircleOutline} class='fill-cyan-700'/>
+                <InputString editable={props.editable}/>
+            </Show>
+            <Show when={props.editable.type === 'enum'}>
+                <Icon icon={mdiPencilCircleOutline} class='fill-cyan-700'/>
+                <InputEnum editable={props.editable}/>
+            </Show>
+            <Show when={props.editable.type === 'boolean'}>
+                <Icon icon={mdiPencilCircleOutline} class='fill-cyan-700'/>
+                <InputBoolean editable={props.editable}/>
+            </Show>
         </div>
     );
 };

@@ -22,6 +22,8 @@ export interface MethodDescription {
 export interface ApiDescription {
     types: Record<string, TypeDescription>;
     methods: Record<string, MethodDescription>;
+    apiUrl?: string;
+    jsSdkPath?: string;
 }
 
 export type MethodsScope = {
