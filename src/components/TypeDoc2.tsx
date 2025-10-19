@@ -1,4 +1,4 @@
-import {Component, createMemo, createSignal, For, getOwner, JSX, Show} from 'solid-js';
+import {Component, createMemo, createSignal, For, getOwner, JSX, Show, runWithOwner} from 'solid-js';
 import {ApiDescription, TypeDescription} from '../lib/api-description';
 import {Icon} from './Icon';
 import {
@@ -49,6 +49,7 @@ export const FullView: Component<{
     evc?: EditableValueContainer;
 }> = props => {
     const nullable = props.desc.nullable ? <div class='text-amber-700 font-bold'> | null</div> : null;
+    const owner = getOwner();
     return (
         <div class='pl-3.5 ml-2.5 my-1 flex flex-col gap-1' classList={{
             'border-l border-gray-700 hover:border-gray-500': !!props.line,
@@ -62,7 +63,7 @@ export const FullView: Component<{
                         <TypeLink name={props.desc.type.alias}/>
                         {nullable}
                     </div>
-                    <FullView api={props.api} desc={props.api.types[props.desc.type.alias]} evc={props.evc?.editable()?.aliasFor}/>
+                    <FullView api={props.api} desc={props.api.types[props.desc.type.alias]} evc={props.evc}/>
                 </>
             ) : (props.desc.type.arrayOf) ? (
                 <>
@@ -88,7 +89,9 @@ export const FullView: Component<{
                                     <button
                                         class='cursor-pointer hover:fill-pink-300'
                                         onClick={() => {
-                                            props.evc?.editable()?.arrayRemove?.(index());
+                                            runWithOwner(owner, () => {
+                                                props.evc?.editable()?.arrayRemove?.(index());
+                                            });
                                         }}
                                     >
                                         <Icon icon={mdiDeleteCircleOutline}/>
@@ -102,7 +105,9 @@ export const FullView: Component<{
                             <button
                                 class='cursor-pointer hover:fill-pink-300'
                                 onClick={() => {
-                                    props.evc?.editable()?.arrayInsert?.();
+                                    runWithOwner(owner, () => {
+                                        props.evc?.editable()?.arrayInsert?.();
+                                    });
                                 }}
                             >
                                 <Icon icon={mdiPlusCircleOutline}/>
@@ -165,7 +170,7 @@ export const TypeDoc2: Component<{
 
         return expandable;
     });
-    // const owner = getOwner();
+    const owner = getOwner();
     return (
         <div>
             <div
@@ -203,9 +208,9 @@ export const TypeDoc2: Component<{
                             'cursor-pointer': !!props.evc,
                         }}
                         onClick={() => {
-                            // runWithOwner(owner, () => {
+                            runWithOwner(owner, () => {
                                 props.evc?.setIsSet?.(!props.evc?.isSet());
-                            // });
+                            });
                         }}
                     >
                         Optional
@@ -222,9 +227,9 @@ export const TypeDoc2: Component<{
                     <div
                         class='bg-amber-900 cursor-pointer rounded-xs px-1 text-gray-200 uppercase text-xs font-bold flex items-center gap-1 group'
                         onClick={() => {
-                            // runWithOwner(owner, () => {
+                            runWithOwner(owner, () => {
                                 props.evc?.setIsNull?.(!props.evc?.isNull());
-                            // });
+                            });
                         }}
                     >
                         null

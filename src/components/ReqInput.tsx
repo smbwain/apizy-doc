@@ -1,4 +1,4 @@
-import {Component, For, ParentComponent, Show} from 'solid-js';
+import {Component, For, getOwner, runWithOwner, Show} from 'solid-js';
 import {EditableValue} from '../lib/editable-request-input';
 import {Icon} from './Icon';
 import {mdiPencilCircleOutline} from '@mdi/js';
@@ -6,6 +6,7 @@ import {mdiPencilCircleOutline} from '@mdi/js';
 export const InputString: Component<{
     editable: EditableValue;
 }> = props => {
+    const owner = getOwner();
     return (
         <input
             class='grow text-gray-700 outline-0 rounded px-1'
@@ -15,7 +16,9 @@ export const InputString: Component<{
             }}
             value={props.editable.strValue?.()}
             onInput={e => {
-                props.editable.setStrValue?.(e.currentTarget.value);
+                runWithOwner(owner, () => {
+                    props.editable.setStrValue?.(e.currentTarget.value);
+                });
             }}
         />
     );
@@ -24,9 +27,12 @@ export const InputString: Component<{
 export const InputBoolean: Component<{
     editable: EditableValue;
 }> = props => {
+    const owner = getOwner();
     return (
         <select class='grow bg-white text-gray-700 outline-0 rounded px-1' onChange={e => {
-            props.editable.setBoolValue?.(e.currentTarget.value === 'true');
+            runWithOwner(owner, () => {
+                props.editable.setBoolValue?.(e.currentTarget.value === 'true');
+            });
         }}>
             <option value='true' selected={props.editable.boolValue?.()}>true</option>
             <option value='false' selected={!props.editable.boolValue?.()}>false</option>
@@ -37,9 +43,12 @@ export const InputBoolean: Component<{
 export const InputEnum: Component<{
     editable: EditableValue;
 }> = props => {
+    const owner = getOwner();
     return (
         <select class='grow bg-white text-gray-700 outline-0 rounded px-1' onChange={e => {
-            props.editable.setStrValue?.(e.currentTarget.value);
+            runWithOwner(owner, () => {
+                props.editable.setStrValue?.(e.currentTarget.value);
+            });
         }}>
             <For each={props.editable.enumValues?.()}>{val => (
                 <option value={val.name} selected={val.name === props.editable.strValue?.()}>{val.name}</option>

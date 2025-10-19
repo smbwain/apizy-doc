@@ -86,7 +86,7 @@ export const MethodDoc: Component<{
                     <div class='p-2 overflow-hidden flex flex-col'>
                         <pre class='bg-gray-200 text-gray-800 p-2 rounded-md overflow-auto'>
                             <strong>await</strong> {props.api.jsSdkPath ?? 'sdk'}.{props.name}(
-                            { JSON.stringify(evc()?.data(), null, 4) }
+                            { JSON.stringify(evc()?.data() ?? null, null, 4) }
                             , {'{}'});
                         </pre>
                     </div>

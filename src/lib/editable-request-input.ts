@@ -18,7 +18,7 @@ export interface EditableValueEnumValue {
 }
 
 export interface EditableValue {
-    type: 'array' | 'string' | 'enum' | 'number' | 'boolean' | 'json' | 'object' | 'alias';
+    type: 'array' | 'string' | 'enum' | 'number' | 'boolean' | 'json' | 'object';
 
     data: () => any;
 
@@ -70,7 +70,7 @@ function createEditableValue(d: TypeDescription, api: ApiDescription): EditableV
         return createArray(d.type.arrayOf, api);
     }
     if (d.type.alias) {
-        return createAlias(api.types[d.type.alias], api);
+        return createEditableValue(api.types[d.type.alias], api);
     }
     if (d.type.ts === 'string') {
         return createString();
@@ -134,15 +134,15 @@ function createBoolean(): EditableValue {
     };
 }
 
-function createAlias(d: TypeDescription, api: ApiDescription): EditableValue {
-    const aliasFor = createEditableValueContainer(d, api);
-
-    return {
-        type: 'alias',
-        aliasFor,
-        data: () => aliasFor.data(),
-    };
-}
+// function createAlias(d: TypeDescription, api: ApiDescription): EditableValue {
+//     const aliasFor = createEditableValueContainer(d, api);
+//
+//     return {
+//         type: 'alias',
+//         aliasFor,
+//         data: () => aliasFor.data(),
+//     };
+// }
 
 function createNumber(): EditableValue {
     const [data, _setData] = createSignal<any>(0);
