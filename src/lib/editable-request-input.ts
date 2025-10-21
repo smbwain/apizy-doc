@@ -110,7 +110,7 @@ function createString(): EditableValue {
 }
 
 function createEnum(enumValues: EditableValueEnumValue[]): EditableValue {
-    const [strValue, setStrValue] = createSignal<string>(enumValues[0].value ?? '');
+    const [strValue, setStrValue] = createSignal<string>(enumValues[0].name ?? '');
 
     return {
         type: 'enum',
